@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="FanqieNovelDownloader.Pages.AboutPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:FanqieNovelDownloader.Pages"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Padding="24,16,24,16" RowSpacing="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="关于" />
+
+        <Grid Grid.Row="1" RowSpacing="16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- 应用图标和名称 -->
+            <StackPanel
+                HorizontalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="16">
+                <Image
+                    Width="64"
+                    Height="64"
+                    Source="Assets/AppIcon.ico" />
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock
+                        FontSize="24"
+                        FontWeight="Bold"
+                        Text="番茄小说阅读器" />
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="WinUI 3 重构版 v1.0.0" />
+                </StackPanel>
+            </StackPanel>
+
+            <!-- 分隔线 -->
+            <Border
+                Grid.Row="1"
+                Height="1"
+                Background="{ThemeResource CardStrokeColorDefaultBrush}" />
+
+            <!-- 功能说明 -->
+            <StackPanel
+                Grid.Row="2"
+                HorizontalAlignment="Center"
+                MaxWidth="600"
+                Spacing="12">
+                <TextBlock
+                    FontSize="16"
+                    FontWeight="SemiBold"
+                    Text="功能特性" />
+                <TextBlock TextWrapping="Wrap">
+                    • 搜索和浏览番茄小说
+                </TextBlock>
+                <TextBlock TextWrapping="Wrap">
+                    • 在线阅读，支持自动阅读模式
+                </TextBlock>
+                <TextBlock TextWrapping="Wrap">
+                    • 离线书库，缓存整本章节
+                </TextBlock>
+                <TextBlock TextWrapping="Wrap">
+                    • 导出为 TXT / EPUB 格式
+                </TextBlock>
+                <TextBlock TextWrapping="Wrap">
+                    • 书架管理，支持本地和官方书架同步
+                </TextBlock>
+            </StackPanel>
+
+            <!-- 分隔线 -->
+            <Border
+                Grid.Row="3"
+                Height="1"
+                Background="{ThemeResource CardStrokeColorDefaultBrush}" />
+
+            <!-- 链接 -->
+            <StackPanel
+                Grid.Row="4"
+                HorizontalAlignment="Center"
+                Spacing="8">
+                <HyperlinkButton
+                    Content="GitHub 仓库"
+                    NavigateUri="https://github.com/POf-L/Fanqie-novel-Downloader" />
+                <HyperlinkButton
+                    Content="问题反馈"
+                    NavigateUri="https://github.com/POf-L/Fanqie-novel-Downloader/issues" />
+                <HyperlinkButton
+                    Content="下载最新版本"
+                    NavigateUri="https://github.com/POf-L/Fanqie-novel-Downloader/releases/latest" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Page>

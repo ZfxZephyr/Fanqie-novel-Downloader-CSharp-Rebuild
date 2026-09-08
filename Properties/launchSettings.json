@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "FanqieNovelDownloader (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "FanqieNovelDownloader (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

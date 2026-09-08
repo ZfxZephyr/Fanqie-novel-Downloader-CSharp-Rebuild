@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="FanqieNovelDownloader.Pages.ReaderPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:FanqieNovelDownloader.Pages"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid>
+        <!-- 加载状态 -->
+        <ProgressRing
+            x:Name="LoadingRing"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            IsActive="True" />
+
+        <!-- 内容区域 -->
+        <Grid x:Name="ContentGrid" Visibility="Collapsed">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- 顶部工具栏 -->
+            <Grid
+                Padding="16,8"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Button
+                    Click="BackButton_Click"
+                    Style="{ThemeResource SubtleButtonStyle}">
+                    <FontIcon Glyph="&#xE72B;" />
+                </Button>
+
+                <TextBlock
+                    x:Name="ChapterTitleText"
+                    Grid.Column="1"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    FontWeight="SemiBold"
+                    TextTrimming="CharacterEllipsis" />
+
+                <StackPanel
+                    Grid.Column="2"
+                    Orientation="Horizontal"
+                    Spacing="8">
+                    <Button
+                        Click="ChapterListButton_Click"
+                        Style="{ThemeResource SubtleButtonStyle}">
+                        <FontIcon Glyph="&#xE8A9;" />
+                    </Button>
+                    <Button
+                        Click="SettingsButton_Click"
+                        Style="{ThemeResource SubtleButtonStyle}">
+                        <FontIcon Glyph="&#xE713;" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- 阅读内容 -->
+            <Grid Grid.Row="1">
+                <ScrollViewer
+                    x:Name="ContentScrollViewer"
+                    Padding="32,24">
+                    <RichTextBlock
+                        x:Name="ContentRichTextBlock"
+                        FontSize="18"
+                        LineHeight="36"
+                        FontFamily="Segoe UI"
+                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                        TextWrapping="Wrap" />
+                </ScrollViewer>
+
+                <!-- 章节切换加载遮罩 -->
+                <Grid
+                    x:Name="ChapterLoadingOverlay"
+                    Visibility="Collapsed"
+                    Background="{ThemeResource SolidBackgroundFillColorBaseBrush}">
+                    <StackPanel
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="12">
+                        <ProgressRing
+                            HorizontalAlignment="Center"
+                            IsActive="True"
+                            Width="40"
+                            Height="40" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="正在加载章节内容..." />
+                    </StackPanel>
+                </Grid>
+            </Grid>
+
+            <!-- 底部导航栏 -->
+            <Grid
+                x:Name="BottomNavBar"
+                Grid.Row="2"
+                Padding="16,8"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Button
+                    x:Name="PrevChapterButton"
+                    Click="PrevChapterButton_Click">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE72B;" />
+                        <TextBlock Text="上一章" />
+                    </StackPanel>
+                </Button>
+
+                <TextBlock
+                    x:Name="ChapterProgressText"
+                    Grid.Column="1"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+                <Button
+                    x:Name="NextChapterButton"
+                    Grid.Column="2"
+                    Click="NextChapterButton_Click">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="下一章" />
+                        <FontIcon Glyph="&#xE72A;" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Grid>
+
+        <!-- 隐蔽模式 - 小窗阅读 -->
+        <Border
+            x:Name="StealthOverlay"
+            Visibility="Collapsed"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+            Opacity="0.95">
+            <Grid Padding="16">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- 简洁的小窗标题栏 -->
+                <Grid>
+                    <TextBlock
+                        x:Name="StealthTitleText"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        TextTrimming="CharacterEllipsis"
+                        Text="便签" />
+                    <StackPanel
+                        HorizontalAlignment="Right"
+                        Orientation="Horizontal"
+                        Spacing="4">
+                        <Button
+                            Click="StealthCloseButton_Click"
+                            Style="{ThemeResource SubtleButtonStyle}"
+                            Padding="4">
+                            <FontIcon Glyph="&#xE711;" FontSize="12" />
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <!-- 小窗内容 -->
+                <Grid Grid.Row="1" Margin="0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button
+                        x:Name="StealthSmallPrevButton"
+                        Grid.Column="0"
+                        VerticalAlignment="Center"
+                        Click="PrevChapterButton_Click"
+                        Style="{ThemeResource SubtleButtonStyle}"
+                        Padding="4">
+                        <FontIcon Glyph="&#xE72B;" FontSize="14" />
+                    </Button>
+
+                    <RichTextBlock
+                        x:Name="StealthContentBlock"
+                        Grid.Column="1"
+                        FontSize="14"
+                        LineHeight="24"
+                        TextWrapping="Wrap"
+                        Margin="8,0" />
+
+                    <Button
+                        x:Name="StealthSmallNextButton"
+                        Grid.Column="2"
+                        VerticalAlignment="Center"
+                        Click="NextChapterButton_Click"
+                        Style="{ThemeResource SubtleButtonStyle}"
+                        Padding="4">
+                        <FontIcon Glyph="&#xE72A;" FontSize="14" />
+                    </Button>
+                </Grid>
+
+                <!-- 小窗底部信息 -->
+                <TextBlock
+                    x:Name="StealthProgressText"
+                    Grid.Row="2"
+                    HorizontalAlignment="Center"
+                    FontSize="10"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+            </Grid>
+        </Border>
+
+        <!-- 章节列表面板 -->
+        <Grid
+            x:Name="ChapterListPanel"
+            HorizontalAlignment="Right"
+            Visibility="Collapsed"
+            Width="320">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Grid Padding="16" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock
+                    FontSize="16"
+                    FontWeight="SemiBold"
+                    VerticalAlignment="Center"
+                    Text="章节目录" />
+                <Button
+                    x:Name="SortButton"
+                    Grid.Column="1"
+                    Click="SortButton_Click"
+                    Style="{ThemeResource SubtleButtonStyle}"
+                    ToolTipService.ToolTip="切换排序">
+                    <FontIcon Glyph="&#xE8CB;" />
+                </Button>
+                <Button
+                    Grid.Column="2"
+                    Click="CloseChapterListButton_Click"
+                    Style="{ThemeResource SubtleButtonStyle}">
+                    <FontIcon Glyph="&#xE711;" />
+                </Button>
+            </Grid>
+
+            <ListView
+                x:Name="ChapterList"
+                Grid.Row="1"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                IsItemClickEnabled="True"
+                ItemClick="ChapterList_ItemClick"
+                SelectionMode="None" />
+        </Grid>
+
+        <!-- 阅读设置面板 -->
+        <Grid
+            x:Name="SettingsPanel"
+            HorizontalAlignment="Right"
+            Padding="16"
+            Visibility="Collapsed"
+            Width="320"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+            <StackPanel Spacing="16">
+                <Grid>
+                    <TextBlock
+                        FontSize="16"
+                        FontWeight="SemiBold"
+                        Text="阅读设置" />
+                    <Button
+                        HorizontalAlignment="Right"
+                        Click="CloseSettingsButton_Click"
+                        Style="{ThemeResource SubtleButtonStyle}">
+                        <FontIcon Glyph="&#xE711;" />
+                    </Button>
+                </Grid>
+
+                <!-- 字体选择 -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="字体" />
+                    <ComboBox
+                        x:Name="FontComboBox"
+                        SelectedIndex="0"
+                        SelectionChanged="FontComboBox_SelectionChanged">
+                        <ComboBoxItem Content="系统默认" />
+                        <ComboBoxItem Content="微软雅黑" />
+                        <ComboBoxItem Content="宋体" />
+                        <ComboBoxItem Content="楷体" />
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- 字体大小 -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="字体大小" />
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Slider
+                            x:Name="FontSizeSlider"
+                            Maximum="32"
+                            Minimum="12"
+                            ValueChanged="FontSizeSlider_ValueChanged"
+                            Value="18" />
+                        <TextBlock
+                            x:Name="FontSizeText"
+                            Grid.Column="1"
+                            VerticalAlignment="Center"
+                            Text="18" />
+                    </Grid>
+                </StackPanel>
+
+                <!-- 行间距 -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="行间距" />
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Slider
+                            x:Name="LineHeightSlider"
+                            Maximum="60"
+                            Minimum="24"
+                            ValueChanged="LineHeightSlider_ValueChanged"
+                            Value="36" />
+                        <TextBlock
+                            x:Name="LineHeightText"
+                            Grid.Column="1"
+                            VerticalAlignment="Center"
+                            Text="36" />
+                    </Grid>
+                </StackPanel>
+
+                <!-- 阅读主题 -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="阅读主题" />
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Button
+                            x:Name="ThemeLightButton"
+                            Click="ThemeButton_Click"
+                            Tag="Light"
+                            Width="60"
+                            Height="36">
+                            <Border
+                                Width="32"
+                                Height="24"
+                                Background="White"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4" />
+                        </Button>
+                        <Button
+                            x:Name="ThemeDarkButton"
+                            Click="ThemeButton_Click"
+                            Tag="Dark"
+                            Width="60"
+                            Height="36">
+                            <Border
+                                Width="32"
+                                Height="24"
+                                Background="#1E1E1E"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4" />
+                        </Button>
+                        <Button
+                            x:Name="ThemeSepiaButton"
+                            Click="ThemeButton_Click"
+                            Tag="Sepia"
+                            Width="60"
+                            Height="36">
+                            <Border
+                                Width="32"
+                                Height="24"
+                                Background="#F5F0E8"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4" />
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- 分隔线 -->
+                <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" />
+
+                <!-- 隐蔽模式 -->
+                <StackPanel Spacing="8">
+                    <Grid>
+                        <TextBlock Text="隐蔽模式" VerticalAlignment="Center" />
+                        <ToggleSwitch
+                            x:Name="StealthModeToggle"
+                            HorizontalAlignment="Right"
+                            Toggled="StealthModeToggle_Toggled"
+                            OnContent="开"
+                            OffContent="关" />
+                    </Grid>
+                    <StackPanel x:Name="StealthSettingsPanel" Spacing="8" Visibility="Collapsed">
+                        <TextBlock Text="显示行数" />
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Slider
+                                x:Name="StealthLineSlider"
+                                Maximum="10"
+                                Minimum="1"
+                                ValueChanged="StealthLineSlider_ValueChanged"
+                                Value="3" />
+                            <TextBlock
+                                x:Name="StealthLineText"
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Text="3" />
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Page>

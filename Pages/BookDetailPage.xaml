@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="FanqieNovelDownloader.Pages.BookDetailPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:FanqieNovelDownloader.Pages"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:FanqieNovelDownloader.Models"
+    mc:Ignorable="d">
+
+    <Grid>
+        <!-- 加载状态 -->
+        <ProgressRing
+            x:Name="LoadingRing"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            IsActive="True" />
+
+        <!-- 错误提示 -->
+        <StackPanel
+            x:Name="ErrorPanel"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Visibility="Collapsed">
+            <FontIcon
+                HorizontalAlignment="Center"
+                FontSize="48"
+                Glyph="&#xE783;" />
+            <TextBlock
+                Margin="0,16,0,0"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="加载失败" />
+            <Button
+                Margin="0,16,0,0"
+                Click="RetryButton_Click"
+                Content="重试" />
+        </StackPanel>
+
+        <!-- 内容区域 -->
+        <ScrollViewer x:Name="ContentScrollViewer" Visibility="Collapsed">
+            <StackPanel Padding="24,16,24,24" Spacing="24">
+
+                <!-- 书籍基本信息区域 -->
+                <Grid ColumnSpacing="24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- 封面图片 -->
+                    <Border
+                        Width="180"
+                        Height="240"
+                        CornerRadius="8">
+                        <Image
+                            x:Name="CoverImage"
+                            Stretch="UniformToFill" />
+                    </Border>
+
+                    <!-- 书籍信息 -->
+                    <StackPanel
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Spacing="12">
+
+                        <!-- 书名 -->
+                        <TextBlock
+                            x:Name="TitleText"
+                            FontSize="24"
+                            FontWeight="Bold"
+                            TextWrapping="Wrap" />
+
+                        <!-- 作者 -->
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon
+                                FontSize="16"
+                                Glyph="&#xE77B;" />
+                            <TextBlock
+                                x:Name="AuthorText"
+                                FontSize="16"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+
+                        <!-- 统计信息 -->
+                        <StackPanel Orientation="Horizontal" Spacing="24">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <FontIcon
+                                    FontSize="14"
+                                    Glyph="&#xE8A9;" />
+                                <TextBlock
+                                    x:Name="WordCountText"
+                                    FontSize="14"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <FontIcon
+                                    FontSize="14"
+                                    Glyph="&#xE734;" />
+                                <TextBlock
+                                    x:Name="ChapterCountText"
+                                    FontSize="14"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <FontIcon
+                                    FontSize="14"
+                                    Glyph="&#xE77B;" />
+                                <TextBlock
+                                    x:Name="ReadCountText"
+                                    FontSize="14"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- 标签 -->
+                        <ItemsControl x:Name="TagsList">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" Spacing="8" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <Border
+                                        Padding="12,4"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="4">
+                                        <TextBlock FontSize="12" Text="{x:Bind}" />
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Grid>
+
+                <!-- 操作按钮 -->
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Button
+                        x:Name="AddToBookshelfButton"
+                        Click="AddToBookshelfButton_Click"
+                        Style="{ThemeResource AccentButtonStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE734;" />
+                            <TextBlock Text="加入书架" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="StartReadingButton" Click="StartReadingButton_Click">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE8A9;" />
+                            <TextBlock Text="开始阅读" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- 分隔线 -->
+                <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" />
+
+                <!-- 简介 -->
+                <StackPanel Spacing="12">
+                    <TextBlock
+                        FontSize="18"
+                        FontWeight="SemiBold"
+                        Text="简介" />
+                    <TextBlock
+                        x:Name="DescriptionText"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        LineHeight="28"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+
+                <!-- 分隔线 -->
+                <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" />
+
+                <!-- 章节目录 -->
+                <StackPanel Spacing="12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock
+                            FontSize="18"
+                            FontWeight="SemiBold"
+                            Text="章节目录" />
+                        <TextBlock
+                            x:Name="ChapterTotalText"
+                            Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Margin="0,0,8,0"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="" />
+                        <Button
+                            x:Name="SortButton"
+                            Grid.Column="2"
+                            Click="SortButton_Click"
+                            Style="{ThemeResource SubtleButtonStyle}"
+                            ToolTipService.ToolTip="切换排序">
+                            <FontIcon Glyph="&#xE8CB;" />
+                        </Button>
+                    </Grid>
+
+                    <!-- 章节列表 -->
+                    <ListView
+                        x:Name="ChapterListView"
+                        IsItemClickEnabled="True"
+                        ItemClick="ChapterListView_ItemClick"
+                        SelectionMode="None">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="models:ChapterInfo">
+                                <Grid Padding="12,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{x:Bind Title}" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                        Text="{x:Bind VolumeName}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>
