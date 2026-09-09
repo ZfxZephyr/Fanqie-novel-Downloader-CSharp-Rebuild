@@ -1,6 +1,7 @@
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Imaging;
 using FanqieNovelDownloader.Pages;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -17,7 +18,27 @@ public sealed partial class MainWindow : Window
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
         AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
-        AppWindow.SetIcon("Assets/AppIcon.png");
+
+        // 未打包模式（WindowsPackageType=None）下 ms-appx URI 失效，
+        // 必须使用输出目录的绝对路径设置图标
+        var iconDir = Path.Combine(AppContext.BaseDirectory, "Assets");
+
+        // 窗口图标（标题栏 + 任务栏），使用 ICO
+        var icoPath = Path.Combine(iconDir, "AppIcon.ico");
+        if (File.Exists(icoPath))
+        {
+            AppWindow.SetIcon(icoPath);
+        }
+
+        // 标题栏控件左侧的 Logo，使用 PNG
+        var pngPath = Path.Combine(iconDir, "AppIcon.png");
+        if (File.Exists(pngPath))
+        {
+            AppTitleBar.IconSource = new ImageIconSource
+            {
+                ImageSource = new BitmapImage(new Uri(pngPath))
+            };
+        }
     }
 
     private void TitleBar_PaneToggleRequested(TitleBar sender, object args)
