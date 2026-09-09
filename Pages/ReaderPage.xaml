@@ -142,90 +142,6 @@
             </Grid>
         </Grid>
 
-        <!-- 隐蔽模式 - 小窗阅读 -->
-        <Border
-            x:Name="StealthOverlay"
-            Visibility="Collapsed"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Stretch"
-            Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
-            Opacity="0.95">
-            <Grid Padding="16">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-
-                <!-- 简洁的小窗标题栏 -->
-                <Grid>
-                    <TextBlock
-                        x:Name="StealthTitleText"
-                        VerticalAlignment="Center"
-                        FontSize="12"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        TextTrimming="CharacterEllipsis"
-                        Text="便签" />
-                    <StackPanel
-                        HorizontalAlignment="Right"
-                        Orientation="Horizontal"
-                        Spacing="4">
-                        <Button
-                            Click="StealthCloseButton_Click"
-                            Style="{ThemeResource SubtleButtonStyle}"
-                            Padding="4">
-                            <FontIcon Glyph="&#xE711;" FontSize="12" />
-                        </Button>
-                    </StackPanel>
-                </Grid>
-
-                <!-- 小窗内容 -->
-                <Grid Grid.Row="1" Margin="0,8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
-                    <Button
-                        x:Name="StealthSmallPrevButton"
-                        Grid.Column="0"
-                        VerticalAlignment="Center"
-                        Click="PrevChapterButton_Click"
-                        Style="{ThemeResource SubtleButtonStyle}"
-                        Padding="4">
-                        <FontIcon Glyph="&#xE72B;" FontSize="14" />
-                    </Button>
-
-                    <RichTextBlock
-                        x:Name="StealthContentBlock"
-                        Grid.Column="1"
-                        FontSize="14"
-                        LineHeight="24"
-                        TextWrapping="Wrap"
-                        Margin="8,0" />
-
-                    <Button
-                        x:Name="StealthSmallNextButton"
-                        Grid.Column="2"
-                        VerticalAlignment="Center"
-                        Click="NextChapterButton_Click"
-                        Style="{ThemeResource SubtleButtonStyle}"
-                        Padding="4">
-                        <FontIcon Glyph="&#xE72A;" FontSize="14" />
-                    </Button>
-                </Grid>
-
-                <!-- 小窗底部信息 -->
-                <TextBlock
-                    x:Name="StealthProgressText"
-                    Grid.Row="2"
-                    HorizontalAlignment="Center"
-                    FontSize="10"
-                    Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
-            </Grid>
-        </Border>
-
         <!-- 章节列表面板 -->
         <Grid
             x:Name="ChapterListPanel"
@@ -281,7 +197,8 @@
             Visibility="Collapsed"
             Width="320"
             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
-            <StackPanel Spacing="16">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="16">
                 <Grid>
                     <TextBlock
                         FontSize="16"
@@ -356,49 +273,212 @@
                 <!-- 阅读主题 -->
                 <StackPanel Spacing="8">
                     <TextBlock Text="阅读主题" />
-                    <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Grid ColumnSpacing="8" RowSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Button
+                            x:Name="ThemeSystemButton"
+                            Click="ThemePresetButton_Click"
+                            Tag="System"
+                            HorizontalAlignment="Stretch"
+                            Padding="0">
+                            <StackPanel Spacing="2" Margin="8,6">
+                                <Border
+                                    Width="64"
+                                    Height="24"
+                                    Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                        Text="Aa" />
+                                </Border>
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontSize="10"
+                                    Text="跟随系统" />
+                            </StackPanel>
+                        </Button>
                         <Button
                             x:Name="ThemeLightButton"
-                            Click="ThemeButton_Click"
+                            Grid.Column="1"
+                            Click="ThemePresetButton_Click"
                             Tag="Light"
-                            Width="60"
-                            Height="36">
-                            <Border
-                                Width="32"
-                                Height="24"
-                                Background="White"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="1"
-                                CornerRadius="4" />
+                            HorizontalAlignment="Stretch"
+                            Padding="0">
+                            <StackPanel Spacing="2" Margin="8,6">
+                                <Border
+                                    Width="64"
+                                    Height="24"
+                                    Background="#FFFFFF"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="12"
+                                        Foreground="#1A1A1A"
+                                        Text="Aa" />
+                                </Border>
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontSize="10"
+                                    Text="亮色" />
+                            </StackPanel>
                         </Button>
                         <Button
                             x:Name="ThemeDarkButton"
-                            Click="ThemeButton_Click"
+                            Grid.Column="2"
+                            Click="ThemePresetButton_Click"
                             Tag="Dark"
-                            Width="60"
-                            Height="36">
-                            <Border
-                                Width="32"
-                                Height="24"
-                                Background="#1E1E1E"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="1"
-                                CornerRadius="4" />
+                            HorizontalAlignment="Stretch"
+                            Padding="0">
+                            <StackPanel Spacing="2" Margin="8,6">
+                                <Border
+                                    Width="64"
+                                    Height="24"
+                                    Background="#1E1E1E"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="12"
+                                        Foreground="#DCDCDC"
+                                        Text="Aa" />
+                                </Border>
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontSize="10"
+                                    Text="暗色" />
+                            </StackPanel>
                         </Button>
                         <Button
                             x:Name="ThemeSepiaButton"
-                            Click="ThemeButton_Click"
+                            Grid.Row="1"
+                            Click="ThemePresetButton_Click"
                             Tag="Sepia"
-                            Width="60"
-                            Height="36">
-                            <Border
-                                Width="32"
-                                Height="24"
-                                Background="#F5F0E8"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="1"
-                                CornerRadius="4" />
+                            HorizontalAlignment="Stretch"
+                            Padding="0">
+                            <StackPanel Spacing="2" Margin="8,6">
+                                <Border
+                                    Width="64"
+                                    Height="24"
+                                    Background="#F5F0E8"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="12"
+                                        Foreground="#50432C"
+                                        Text="Aa" />
+                                </Border>
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontSize="10"
+                                    Text="米黄" />
+                            </StackPanel>
                         </Button>
+                        <Button
+                            x:Name="ThemeGreenButton"
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Click="ThemePresetButton_Click"
+                            Tag="Green"
+                            HorizontalAlignment="Stretch"
+                            Padding="0">
+                            <StackPanel Spacing="2" Margin="8,6">
+                                <Border
+                                    Width="64"
+                                    Height="24"
+                                    Background="#C7EDCC"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="12"
+                                        Foreground="#2B3A2B"
+                                        Text="Aa" />
+                                </Border>
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontSize="10"
+                                    Text="绿色" />
+                            </StackPanel>
+                        </Button>
+                        <Button
+                            x:Name="ThemeCustomButton"
+                            Grid.Row="1"
+                            Grid.Column="2"
+                            Click="ThemePresetButton_Click"
+                            Tag="Custom"
+                            HorizontalAlignment="Stretch"
+                            Padding="0">
+                            <StackPanel Spacing="2" Margin="8,6">
+                                <Border
+                                    x:Name="ThemeCustomSwatchBorder"
+                                    Width="64"
+                                    Height="24"
+                                    Background="#F5F0E8"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4">
+                                    <TextBlock
+                                        x:Name="ThemeCustomSwatchText"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="12"
+                                        Foreground="#50432C"
+                                        Text="Aa" />
+                                </Border>
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontSize="10"
+                                    Text="自定义" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <!-- 自定义颜色（选"自定义"时展开） -->
+                    <StackPanel x:Name="CustomThemePanel" Spacing="12" Visibility="Collapsed">
+                        <TextBlock Text="背景颜色" />
+                        <ColorPicker
+                            x:Name="BgColorPicker"
+                            ColorChanged="BgColorPicker_ColorChanged"
+                            IsAlphaEnabled="False"
+                            IsAlphaSliderVisible="False"
+                            IsAlphaTextInputVisible="False"
+                            IsColorChannelTextInputVisible="False"
+                            IsColorPreviewVisible="False"
+                            IsMoreButtonVisible="False" />
+                        <TextBlock Text="文字颜色" />
+                        <ColorPicker
+                            x:Name="FgColorPicker"
+                            ColorChanged="FgColorPicker_ColorChanged"
+                            IsAlphaEnabled="False"
+                            IsAlphaSliderVisible="False"
+                            IsAlphaTextInputVisible="False"
+                            IsColorChannelTextInputVisible="False"
+                            IsColorPreviewVisible="False"
+                            IsMoreButtonVisible="False" />
                     </StackPanel>
                 </StackPanel>
 
@@ -435,9 +515,28 @@
                                 VerticalAlignment="Center"
                                 Text="3" />
                         </Grid>
+                        <TextBlock Text="滚动步长" />
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Slider
+                                x:Name="StealthStepSlider"
+                                Maximum="10"
+                                Minimum="1"
+                                ValueChanged="StealthStepSlider_ValueChanged"
+                                Value="1" />
+                            <TextBlock
+                                x:Name="StealthStepText"
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Text="1" />
+                        </Grid>
                     </StackPanel>
                 </StackPanel>
-            </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
         </Grid>
     </Grid>
 </Page>

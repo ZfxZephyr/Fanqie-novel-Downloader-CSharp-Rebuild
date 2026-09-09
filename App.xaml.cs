@@ -11,6 +11,11 @@ public partial class App : Application
     private Window? _window;
 
     /// <summary>
+    /// 主窗口静态引用（隐蔽模式需隐藏/恢复主窗口）
+    /// </summary>
+    public static MainWindow? MainWindow { get; private set; }
+
+    /// <summary>
     /// 下载服务单例
     /// </summary>
     public static DownloadService DownloadService { get; } = new();
@@ -24,6 +29,11 @@ public partial class App : Application
     /// 历史记录服务单例
     /// </summary>
     public static HistoryService HistoryService { get; } = new();
+
+    /// <summary>
+    /// 阅读主题服务单例
+    /// </summary>
+    public static ReaderThemeService ReaderThemeService { get; } = new();
 
     /// <summary>
     /// Initializes the singleton application object.  This is the first line of authored code
@@ -43,8 +53,10 @@ public partial class App : Application
         // 加载本地数据
         await BookshelfService.LoadAsync();
         await HistoryService.LoadAsync();
+        await ReaderThemeService.LoadAsync();
 
-        _window = new MainWindow();
-        _window.Activate();
+        MainWindow = new MainWindow();
+        _window = MainWindow;
+        MainWindow.Activate();
     }
 }

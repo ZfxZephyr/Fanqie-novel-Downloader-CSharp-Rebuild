@@ -26,7 +26,6 @@ public sealed partial class ReaderPage : Page
 {
     private readonly FanqieApiService _apiService;
     private string _bookId = string.Empty;
-    private string _bookTitle = string.Empty;
     private List<ChapterInfo> _chapters = new();
     private int _currentChapterIndex;
     private string _currentChapterContent = string.Empty;
@@ -34,11 +33,17 @@ public sealed partial class ReaderPage : Page
     private bool _isAscendingOrder = true; // 正序/倒序状态
     private bool _isStealthMode = false; // 隐蔽模式
     private int _stealthLineCount = 3; // 隐蔽模式显示行数
+    private int _stealthScrollStep = 1; // 隐蔽模式滚动步长
+    private StealthWindow? _stealthWindow; // 隐蔽模式小窗
+    private int? _pendingScrollLine; // 退出隐蔽模式后需滚动到的行号
+    private bool _suppressThemeEvents; // 初始化 ColorPicker 时抑制事件
+    private CancellationTokenSource? _themeSaveCts; // 主题保存防抖
 
     public ReaderPage()
     {
         InitializeComponent();
         _apiService = new FanqieApiService();
+        InitializeThemeUI();
     }
 
     /// <summary>
@@ -51,7 +56,6 @@ public sealed partial class ReaderPage : Page
         if (e.Parameter is ReaderParams p)
         {
             _bookId = p.BookId;
-            _bookTitle = p.BookTitle;
 
             await LoadChaptersAsync(p.StartChapterId);
         }
@@ -137,11 +141,7 @@ public sealed partial class ReaderPage : Page
             // 显示内容
             ContentRichTextBlock.Blocks.Clear();
             var lines = _currentChapterContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            var displayLines = _isStealthMode
-                ? lines.Take(_stealthLineCount).ToArray()
-                : lines;
-
-            foreach (var line in displayLines)
+            foreach (var line in lines)
             {
                 var paragraph = new Paragraph();
                 // 首行缩进（两个中文字符宽度）
@@ -151,6 +151,7 @@ public sealed partial class ReaderPage : Page
             }
 
             ContentScrollViewer.ScrollToVerticalOffset(0);
+            ApplyPendingScrollLine();
 
             if (isChapterSwitch)
             {
@@ -163,15 +164,6 @@ public sealed partial class ReaderPage : Page
                 ContentGrid.Visibility = Visibility.Visible;
             }
 
-            // 更新隐蔽模式按钮状态
-            if (_isStealthMode)
-            {
-                StealthSmallPrevButton.IsEnabled = chapterIndex > 0;
-                StealthSmallNextButton.IsEnabled = chapterIndex < _chapters.Count - 1;
-                StealthTitleText.Text = chapter.Title;
-                StealthProgressText.Text = $"{chapterIndex + 1} / {_chapters.Count}";
-            }
-
             // 更新书架的最后阅读记录
             await UpdateBookshelfReadingProgress(chapter);
         }
@@ -180,6 +172,7 @@ public sealed partial class ReaderPage : Page
             ChapterLoadingOverlay.Visibility = Visibility.Collapsed;
             PrevChapterButton.IsEnabled = _currentChapterIndex > 0;
             NextChapterButton.IsEnabled = _currentChapterIndex < _chapters.Count - 1;
+            _pendingScrollLine = null;
 
             if (!isChapterSwitch)
                 LoadingRing.IsActive = false;
@@ -341,37 +334,142 @@ public sealed partial class ReaderPage : Page
     }
 
     /// <summary>
-    /// 主题切换
+    /// 主题预设按钮点击
     /// </summary>
-    private void ThemeButton_Click(object sender, RoutedEventArgs e)
+    private void ThemePresetButton_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is Button button && button.Tag is string theme)
+        if (sender is not Button button || button.Tag is not string tag)
+            return;
+
+        if (!Enum.TryParse<ReaderThemeMode>(tag, out var mode))
+            return;
+
+        App.ReaderThemeService.Mode = mode;
+        _ = App.ReaderThemeService.SaveAsync();
+
+        ApplyCurrentTheme();
+        UpdateThemeSelectionVisuals();
+        UpdateCustomSwatch();
+    }
+
+    /// <summary>
+    /// 自定义背景色改变
+    /// </summary>
+    private void BgColorPicker_ColorChanged(ColorPicker sender, ColorChangedEventArgs args)
+    {
+        if (_suppressThemeEvents) return;
+
+        App.ReaderThemeService.CustomBackgroundHex = ReaderThemeService.ToHex(args.NewColor);
+        UpdateCustomSwatch();
+        if (App.ReaderThemeService.Mode == ReaderThemeMode.Custom)
         {
-            ApplyTheme(theme);
+            ApplyCurrentTheme();
+        }
+        QueueThemeSave();
+    }
+
+    /// <summary>
+    /// 自定义文字色改变
+    /// </summary>
+    private void FgColorPicker_ColorChanged(ColorPicker sender, ColorChangedEventArgs args)
+    {
+        if (_suppressThemeEvents) return;
+
+        App.ReaderThemeService.CustomForegroundHex = ReaderThemeService.ToHex(args.NewColor);
+        UpdateCustomSwatch();
+        if (App.ReaderThemeService.Mode == ReaderThemeMode.Custom)
+        {
+            ApplyCurrentTheme();
+        }
+        QueueThemeSave();
+    }
+
+    /// <summary>
+    /// 初始化主题设置 UI（选中状态、色板、自定义颜色）
+    /// </summary>
+    private void InitializeThemeUI()
+    {
+        _suppressThemeEvents = true;
+        BgColorPicker.Color = ReaderThemeService.ParseHex(App.ReaderThemeService.CustomBackgroundHex);
+        FgColorPicker.Color = ReaderThemeService.ParseHex(App.ReaderThemeService.CustomForegroundHex);
+        _suppressThemeEvents = false;
+
+        UpdateThemeSelectionVisuals();
+        UpdateCustomSwatch();
+        ApplyCurrentTheme();
+    }
+
+    /// <summary>
+    /// 应用当前主题到阅读内容区
+    /// </summary>
+    private void ApplyCurrentTheme()
+    {
+        var colors = App.ReaderThemeService.GetColors();
+        if (colors is null)
+        {
+            // 跟随系统：还原主题资源
+            ContentGrid.Background = null;
+            ContentRichTextBlock.Foreground = (Brush)Application.Current.Resources["TextFillColorPrimaryBrush"];
+        }
+        else
+        {
+            ContentGrid.Background = new SolidColorBrush(colors.Value.Background);
+            ContentRichTextBlock.Foreground = new SolidColorBrush(colors.Value.Foreground);
         }
     }
 
     /// <summary>
-    /// 应用主题
+    /// 更新主题预设按钮的选中高亮与自定义面板可见性
     /// </summary>
-    private void ApplyTheme(string theme)
+    private void UpdateThemeSelectionVisuals()
     {
-        var resources = Application.Current.Resources;
-
-        switch (theme)
+        var buttons = new[]
         {
-            case "Light":
-                ContentGrid.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 255, 255));
-                ContentRichTextBlock.Foreground = (Brush)resources["TextFillColorPrimaryBrush"];
-                break;
-            case "Dark":
-                ContentGrid.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 30, 30, 30));
-                ContentRichTextBlock.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 220, 220, 220));
-                break;
-            case "Sepia":
-                ContentGrid.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 245, 240, 232));
-                ContentRichTextBlock.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 80, 60, 40));
-                break;
+            ThemeSystemButton, ThemeLightButton, ThemeDarkButton,
+            ThemeSepiaButton, ThemeGreenButton, ThemeCustomButton,
+        };
+        var current = App.ReaderThemeService.Mode.ToString();
+
+        foreach (var button in buttons)
+        {
+            var selected = button.Tag as string == current;
+            button.BorderBrush = selected
+                ? (Brush)Application.Current.Resources["AccentFillColorDefaultBrush"]
+                : (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"];
+            button.BorderThickness = new Thickness(selected ? 2 : 1);
+        }
+
+        CustomThemePanel.Visibility = App.ReaderThemeService.Mode == ReaderThemeMode.Custom
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    }
+
+    /// <summary>
+    /// 更新自定义预设按钮的色板预览
+    /// </summary>
+    private void UpdateCustomSwatch()
+    {
+        var bg = ReaderThemeService.ParseHex(App.ReaderThemeService.CustomBackgroundHex);
+        var fg = ReaderThemeService.ParseHex(App.ReaderThemeService.CustomForegroundHex);
+        ThemeCustomSwatchBorder.Background = new SolidColorBrush(bg);
+        ThemeCustomSwatchText.Foreground = new SolidColorBrush(fg);
+    }
+
+    /// <summary>
+    /// 防抖保存主题设置（拖动色板时避免频繁写盘）
+    /// </summary>
+    private async void QueueThemeSave()
+    {
+        _themeSaveCts?.Cancel();
+        _themeSaveCts = new CancellationTokenSource();
+        try
+        {
+            await Task.Delay(500, _themeSaveCts.Token);
+            await App.ReaderThemeService.SaveAsync();
+        }
+        catch (TaskCanceledException)
+        {
+            // 被新的更改取代，忽略
         }
     }
 
@@ -406,52 +504,151 @@ public sealed partial class ReaderPage : Page
     }
 
     /// <summary>
-    /// 隐蔽模式开关切换
+    /// 隐蔽模式开关切换：隐藏主窗口并打开伪装小窗
     /// </summary>
     private void StealthModeToggle_Toggled(object sender, RoutedEventArgs e)
     {
         if (StealthModeToggle == null) return;
 
+        // 程序化设置开关时（退出流程）不重复触发
+        if (_isStealthMode == StealthModeToggle.IsOn) return;
+
         _isStealthMode = StealthModeToggle.IsOn;
         StealthSettingsPanel.Visibility = _isStealthMode ? Visibility.Visible : Visibility.Collapsed;
 
-        // 隐蔽模式小窗
-        StealthOverlay.Visibility = _isStealthMode ? Visibility.Visible : Visibility.Collapsed;
-        ContentGrid.Visibility = _isStealthMode ? Visibility.Collapsed : Visibility.Visible;
-
-        // 隐藏章节列表和设置面板
         if (_isStealthMode)
         {
+            EnterStealthMode();
+        }
+        else
+        {
+            CloseStealthWindow();
+        }
+    }
+
+    /// <summary>
+    /// 进入隐蔽模式：创建小窗并隐藏主窗口
+    /// </summary>
+    private void EnterStealthMode()
+    {
+        if (_chapters.Count == 0 || string.IsNullOrEmpty(_currentChapterContent))
+        {
+            _isStealthMode = false;
+            StealthModeToggle.IsOn = false;
+            return;
+        }
+
+        try
+        {
+            // 关闭可能打开的面板
             ChapterListPanel.Visibility = Visibility.Collapsed;
             SettingsPanel.Visibility = Visibility.Collapsed;
-        }
 
-        // 更新按钮状态
-        if (_isStealthMode)
-        {
-            StealthSmallPrevButton.IsEnabled = _currentChapterIndex > 0;
-            StealthSmallNextButton.IsEnabled = _currentChapterIndex < _chapters.Count - 1;
-            StealthTitleText.Text = _bookTitle;
-            StealthProgressText.Text = $"{_currentChapterIndex + 1} / {_chapters.Count}";
-        }
+            _stealthWindow = new StealthWindow(
+                _apiService,
+                _bookId,
+                _chapters,
+                _currentChapterIndex,
+                _currentChapterContent,
+                _stealthLineCount,
+                _stealthScrollStep);
+            _stealthWindow.Closed += StealthWindow_Closed;
 
-        // 重新显示当前章节内容
-        if (!string.IsNullOrEmpty(_currentChapterContent))
+            // 隐藏主窗口并激活小窗
+            App.MainWindow?.AppWindow.Hide();
+            _stealthWindow.Activate();
+        }
+        catch (Exception ex)
         {
-            RefreshContentDisplay();
+            _isStealthMode = false;
+            if (StealthModeToggle != null)
+            {
+                StealthModeToggle.IsOn = false;
+            }
+            App.MainWindow?.AppWindow.Show();
+            _ = ShowErrorAsync("进入隐蔽模式失败", ex.Message);
         }
     }
 
     /// <summary>
-    /// 关闭隐蔽模式
+    /// 小窗关闭：恢复主窗口并同步阅读进度
     /// </summary>
-    private void StealthCloseButton_Click(object sender, RoutedEventArgs e)
+    private void StealthWindow_Closed(object sender, WindowEventArgs args)
     {
-        StealthModeToggle.IsOn = false;
+        if (_stealthWindow == null) return;
+
+        var chapterIndex = _stealthWindow.ResultChapterIndex;
+        var lineOffset = _stealthWindow.ResultLineOffset;
+        _stealthWindow = null;
+
+        // 恢复状态与主窗口
+        _isStealthMode = false;
+        if (StealthModeToggle != null)
+        {
+            StealthModeToggle.IsOn = false;
+        }
+
+        App.MainWindow?.AppWindow.Show();
+        App.MainWindow?.Activate();
+
+        // 同步进度：跳转到退出时的章节并滚动到行位置
+        _pendingScrollLine = lineOffset;
+        if (chapterIndex != _currentChapterIndex)
+        {
+            _ = LoadChapterContentAsync(chapterIndex, isChapterSwitch: true);
+        }
+        else
+        {
+            ApplyPendingScrollLine();
+        }
     }
 
     /// <summary>
-    /// 隐蔽模式行数改变
+    /// 关闭隐蔽模式小窗（兜底路径，正常退出由小窗 Closed 事件处理）
+    /// </summary>
+    private void CloseStealthWindow()
+    {
+        if (_stealthWindow != null)
+        {
+            _stealthWindow.Closed -= StealthWindow_Closed;
+            _stealthWindow.Close();
+            _stealthWindow = null;
+
+            App.MainWindow?.AppWindow.Show();
+            App.MainWindow?.Activate();
+        }
+    }
+
+    /// <summary>
+    /// 滚动主阅读器到退出隐蔽模式时的行位置（按行高近似定位）
+    /// </summary>
+    private void ApplyPendingScrollLine()
+    {
+        if (_pendingScrollLine is int line && line > 0 && ContentScrollViewer != null)
+        {
+            var offset = Math.Max(0, line * ContentRichTextBlock.LineHeight - 48);
+            ContentScrollViewer.ScrollToVerticalOffset(offset);
+        }
+        _pendingScrollLine = null;
+    }
+
+    /// <summary>
+    /// 显示错误对话框
+    /// </summary>
+    private async Task ShowErrorAsync(string title, string message)
+    {
+        var dialog = new ContentDialog
+        {
+            Title = title,
+            Content = message,
+            CloseButtonText = "确定",
+            XamlRoot = Content.XamlRoot
+        };
+        await dialog.ShowAsync();
+    }
+
+    /// <summary>
+    /// 隐蔽模式显示行数改变
     /// </summary>
     private void StealthLineSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
     {
@@ -460,45 +657,19 @@ public sealed partial class ReaderPage : Page
             _stealthLineCount = (int)e.NewValue;
             if (StealthLineText != null)
                 StealthLineText.Text = _stealthLineCount.ToString();
-
-            // 重新显示内容
-            if (_isStealthMode && !string.IsNullOrEmpty(_currentChapterContent))
-            {
-                RefreshContentDisplay();
-            }
         }
     }
 
     /// <summary>
-    /// 刷新内容显示
+    /// 隐蔽模式滚动步长改变
     /// </summary>
-    private void RefreshContentDisplay()
+    private void StealthStepSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
     {
-        var lines = _currentChapterContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        var displayLines = _isStealthMode
-            ? lines.Take(_stealthLineCount).ToArray()
-            : lines;
-
-        // 更新主阅读器
-        ContentRichTextBlock.Blocks.Clear();
-        foreach (var line in displayLines)
+        if (StealthStepSlider != null)
         {
-            var paragraph = new Paragraph();
-            paragraph.TextIndent = _currentFontSize * 2;
-            paragraph.Inlines.Add(new Run { Text = line.Trim() });
-            ContentRichTextBlock.Blocks.Add(paragraph);
-        }
-
-        // 更新隐蔽模式小窗
-        if (_isStealthMode)
-        {
-            StealthContentBlock.Blocks.Clear();
-            foreach (var line in displayLines)
-            {
-                var paragraph = new Paragraph();
-                paragraph.Inlines.Add(new Run { Text = line.Trim() });
-                StealthContentBlock.Blocks.Add(paragraph);
-            }
+            _stealthScrollStep = (int)e.NewValue;
+            if (StealthStepText != null)
+                StealthStepText.Text = _stealthScrollStep.ToString();
         }
     }
 }
